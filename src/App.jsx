@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import { MdNavigateNext, MdNavigateBefore } from 'react-icons/md';
+import { audioData } from '../audioData';
 
 function App() {
   const [isLoading, setLoading] = useState(true);
@@ -8,6 +9,10 @@ function App() {
   const [data, setData] = useState([]);
   const [highlightedSegments, setHighlightedSegments] = useState([]);
   const [audioSrc, setAudioSrc] = useState('');
+  const [Reciter, setReciter] = useState('Abdul_Basit_Murattal_64kbps');
+  const [dropDown, setDropDown] = useState(false);
+  const [ayahNumber, setAyahNumber] = useState()
+
 
   const fetchData = async () => {
     const jsonFiles = [];
@@ -44,22 +49,39 @@ function App() {
     });
 
     const clickedAyaIds = clickedSegments.map((item) => `${item.sura_id}:${item.aya_id}`);
-
     const allHighlightedSegments = data.flat().filter((item) => {
       return clickedAyaIds.includes(`${item.sura_id}:${item.aya_id}`);
     });
 
     setHighlightedSegments(allHighlightedSegments);
+
     const surahNum = allHighlightedSegments[0].sura_id < 9 ? '00' + allHighlightedSegments[0].sura_id :
     allHighlightedSegments[0].sura_id < 99 ? '0' + allHighlightedSegments[0].sura_id : allHighlightedSegments[0].sura_id
-
-    const audioUrl = `https://everyayah.com/data/AbdulSamad_64kbps_QuranExplorer.Com/${surahNum}${pad(
+    
+    const audioUrl = `https://everyayah.com/data/${Reciter}/${surahNum}${pad(
       clickedAyaIds[0].split(':')[1],
       3
-    )}.mp3`;
+      )}.mp3`;
+      const verseNumber = parseInt(clickedAyaIds[0].split(':')[1], 10); // Parse the verse number as an integer
+      const nextVerseNumber = verseNumber + 1; // Increment the verse number by one
+      const paddedNextVerseNumber = pad(nextVerseNumber, 3); // Pad the incremented verse number
+      
+      setAyahNumber(paddedNextVerseNumber); // Update the state variable with the padded next verse number
+      
+    const nextAyahNumber = `https://everyayah.com/data/${Reciter}/${surahNum}${pad(
+      clickedAyaIds[0].split(':')[1],
+      3
+    )}.mp3`
+    
+    setAyahNumber(nextAyahNumber)
     setAudioSrc(audioUrl);
-    console.log(audioUrl)
+
   };
+
+  const handleAudioEnd = async () => {
+    setAyahNumber(ayahNumber + 1)
+    console.log(ayahNumber)
+  }
 
   // Helper function to pad the number with zeros
   const pad = (num, size) => {
@@ -121,12 +143,15 @@ function App() {
       </div>
 
       {audioSrc && (
-        <audio controls autoPlay src={audioSrc} className='hidden'>
+        <audio controls autoPlay src={audioSrc} onEnded={handleAudioEnd}>
           Your browser does not support the audio element.
         </audio>
       )}
-
       <div className='flex justify-center'>
+        Current Reciter: {Reciter}
+        </div>
+      <div className='flex justify-center'>
+       
         {surahNumber > 1 ? (
           <button
             onClick={() => {
@@ -156,6 +181,37 @@ function App() {
           <span className='mt-auto mb-auto'>Next Page</span> <MdNavigateNext className='mt-auto mb-auto' />
         </button>
       </div>
+      <div className="flex justify-center mt-2">
+      {!dropDown && (
+        <button
+          className="ease-linear duration-150 border rounded px-4 py-1 bg-black text-white"
+          onClick={() => setDropDown(true)}
+        >
+          Reciters
+        </button>
+      )}
+      {dropDown && (
+        <>
+          <div className="absolute h-40 w-[320px] overflow-x-hidden overflow-y-scroll">
+            <button
+              onClick={() => setDropDown(false)}
+              className="ease-linear duration-150 border rounded px-4 py-1 bg-black text-white"
+            >
+              X
+            </button>
+            {Object.keys(audioData).map((key) => (
+              <div
+                className="m-2 border rouneded hover:bg-black hover:text-white ease-linear duration-200 cursor-pointer"
+                key={key}
+                onClick={() => setReciter(audioData[key].subfolder)}
+              >
+                <p>{audioData[key].subfolder}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
     </div>
   );
 }
